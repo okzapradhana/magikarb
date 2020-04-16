@@ -41,15 +41,15 @@ class Solution(object):
         for timestamp in range(int(self.start_timestamp), int(self.end_timestamp+1), step):
             output = []
             print("Current timestamp: ", timestamp)
-            for amount_data in range(timestamp, timestamp+step):
-                print("Amount data: ", amount_data)
+            for curr_time_step in range(timestamp, timestamp+step):
+                print("Curr timestamp in step: ", curr_time_step)
                 id = uuid.uuid4()
                 device_id_rand = random.choice(self.device_id)
                 username_choice = [user for user, dev_id in self.device_user.items()
                                 if device_id_rand in dev_id][0]
                 lokasi_choice = self.location_user[username_choice]
                 amount_rand = random.choice(self.amount)
-                output.append([id, device_id_rand, username_choice, lokasi_choice, amount_rand])
+                output.append([id, device_id_rand, username_choice, lokasi_choice, amount_rand, curr_time_step])
             writer.writerows(output)
 
 if __name__ == '__main__':
