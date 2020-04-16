@@ -7,6 +7,8 @@ import csv
 import os
 import timeit
 import json
+import msgpack
+import pickle
 
 class Solution(object):
     def __init__(self):
@@ -27,8 +29,6 @@ class Solution(object):
                                 datetime.datetime.strptime(self.start_date, "%d/%m/%Y").timetuple())
         self.end_timestamp = time.mktime(
                                 datetime.datetime.strptime(self.end_date, "%d/%m/%Y").timetuple())
-        print(self.start_timestamp)
-        print(self.end_timestamp)
 
     def generate_file(self, output_path, step):
         if not os.path.exists(os.path.dirname(output_path)):
@@ -38,6 +38,8 @@ class Solution(object):
         if "csv" in output_path:
             writer = csv.writer(file, delimiter=',', lineterminator='\n')
             writer.writerow(['id', 'device_id', 'username', 'lokasi', 'amount', 'timestamp'])
+        elif "msgpack" in output_path or "pkl" in output_path:
+            file = open(output_path, "wb")
         
         #batch process, each write 10000 data will empyting the List to clear Memory
         for timestamp in range(int(self.start_timestamp), int(self.end_timestamp+1), step):
@@ -53,7 +55,7 @@ class Solution(object):
                 amount_rand = random.choice(self.amount)
                 if "csv" in output_path:
                     output.append([id, device_id_rand, username_choice, lokasi_choice, amount_rand, curr_time_step])
-                elif "json" in output_path:
+                elif "json" in output_path or "msgpack" in output_path or "pkl" in output_path:
                     data = {
                         "id": str(id),
                         "device_id": device_id_rand,
@@ -67,12 +69,24 @@ class Solution(object):
                 writer.writerows(output)
             elif "json" in output_path:
                 json.dump(output, file)
+            elif "msgpack" in output_path:
+                packed = msgpack.packb(output)
+                file.write(packed)
+            elif "pkl" in output_path:
+                pickle.dump(output, file)
         file.close()
 
 if __name__ == '__main__':
     setup = "from __main__ import Solution"
+    
     exec_time = timeit.timeit('Solution().generate_file(output_path="output/efishery.csv", step=100000)', setup, number=1)
     print("Execution time when write as csv format: ", exec_time)
-
+    
     exec_time = timeit.timeit('Solution().generate_file(output_path="output/efishery.json", step=100000)', setup, number=1)
     print("Execution time when write as json format: ", exec_time)
+
+    exec_time = timeit.timeit('Solution().generate_file(output_path="output/efishery.msgpack", step=100000)', setup, number=1)
+    print("Execution time when write as msgpack format: ", exec_time)
+
+    exec_time = timeit.timeit('Solution().generate_file(output_path="output/efishery.pkl", step=100000)', setup, number=1)
+    print("Execution time when write as pickle format: ", exec_time)
