@@ -6,6 +6,7 @@ import random
 import csv
 import os
 import timeit
+import json
 
 class Solution(object):
     def __init__(self):
@@ -34,8 +35,9 @@ class Solution(object):
             os.makedirs(os.path.dirname(output_path))
 
         file = open(output_path, 'w')
-        writer = csv.writer(file, delimiter=',', lineterminator='\n')
-        writer.writerow(['id', 'device_id', 'username', 'lokasi', 'amount', 'timestamp'])
+        if "csv" in output_path:
+            writer = csv.writer(file, delimiter=',', lineterminator='\n')
+            writer.writerow(['id', 'device_id', 'username', 'lokasi', 'amount', 'timestamp'])
         
         #batch process, each write 10000 data will empyting the List to clear Memory
         for timestamp in range(int(self.start_timestamp), int(self.end_timestamp+1), step):
@@ -49,10 +51,28 @@ class Solution(object):
                                 if device_id_rand in dev_id][0]
                 lokasi_choice = self.location_user[username_choice]
                 amount_rand = random.choice(self.amount)
-                output.append([id, device_id_rand, username_choice, lokasi_choice, amount_rand, curr_time_step])
-            writer.writerows(output)
+                if "csv" in output_path:
+                    output.append([id, device_id_rand, username_choice, lokasi_choice, amount_rand, curr_time_step])
+                elif "json" in output_path:
+                    data = {
+                        "id": str(id),
+                        "device_id": device_id_rand,
+                        "username": username_choice,
+                        "lokasi": lokasi_choice,
+                        "amount": amount_rand,
+                        "timestamp": curr_time_step
+                    }
+                    output.append(data)
+            if "csv" in output_path:
+                writer.writerows(output)
+            elif "json" in output_path:
+                json.dump(output, file)
+        file.close()
 
 if __name__ == '__main__':
     setup = "from __main__ import Solution"
     exec_time = timeit.timeit('Solution().generate_file(output_path="output/efishery.csv", step=100000)', setup, number=1)
     print("Execution time when write as csv format: ", exec_time)
+
+    exec_time = timeit.timeit('Solution().generate_file(output_path="output/efishery.json", step=100000)', setup, number=1)
+    print("Execution time when write as json format: ", exec_time)
