@@ -9,6 +9,7 @@ import timeit
 import json
 import msgpack
 import pickle
+from tinydb import TinyDB
 
 class Solution(object):
     def __init__(self):
@@ -30,7 +31,7 @@ class Solution(object):
         self.end_timestamp = time.mktime(
                                 datetime.datetime.strptime(self.end_date, "%d/%m/%Y").timetuple())
 
-    def generate_file(self, output_path, step):
+    def generate_file(self, output_path, step, db_type=None):
         if not os.path.exists(os.path.dirname(output_path)):
             os.makedirs(os.path.dirname(output_path))
 
@@ -40,24 +41,26 @@ class Solution(object):
             writer.writerow(['id', 'device_id', 'username', 'lokasi', 'amount', 'timestamp'])
         elif "msgpack" in output_path or "pkl" in output_path:
             file = open(output_path, "wb")
-        
+        elif db_type == "tinydb":
+            db = TinyDB(output_path)
+
         #batch process, each write 10000 data will empyting the List to clear Memory
         for timestamp in range(int(self.start_timestamp), int(self.end_timestamp+1), step):
             output = []
             print("Current timestamp: ", timestamp)
             for curr_time_step in range(timestamp, timestamp+step):
                 print("Curr timestamp in step: ", curr_time_step)
-                id = uuid.uuid4()
+                id_data = uuid.uuid4()
                 device_id_rand = random.choice(self.device_id)
                 username_choice = [user for user, dev_id in self.device_user.items()
                                 if device_id_rand in dev_id][0]
                 lokasi_choice = self.location_user[username_choice]
                 amount_rand = random.choice(self.amount)
                 if "csv" in output_path:
-                    output.append([id, device_id_rand, username_choice, lokasi_choice, amount_rand, curr_time_step])
+                    output.append([id_data, device_id_rand, username_choice, lokasi_choice, amount_rand, curr_time_step])
                 elif "json" in output_path or "msgpack" in output_path or "pkl" in output_path:
                     data = {
-                        "id": str(id),
+                        "id": str(id_data),
                         "device_id": device_id_rand,
                         "username": username_choice,
                         "lokasi": lokasi_choice,
@@ -74,19 +77,24 @@ class Solution(object):
                 file.write(packed)
             elif "pkl" in output_path:
                 pickle.dump(output, file)
+            elif db_type == "tinydb":
+                db.insert_multiple(output)
         file.close()
 
 if __name__ == '__main__':
     setup = "from __main__ import Solution"
     
-    exec_time = timeit.timeit('Solution().generate_file(output_path="output/efishery.csv", step=100000)', setup, number=1)
+    exec_time = timeit.timeit('Solution().generate_file("output/efishery.csv", 100000)', setup, number=1)
     print("Execution time when write as csv format: ", exec_time)
     
-    exec_time = timeit.timeit('Solution().generate_file(output_path="output/efishery.json", step=100000)', setup, number=1)
+    exec_time = timeit.timeit('Solution().generate_file("output/efishery.json", 100000)', setup, number=1)
     print("Execution time when write as json format: ", exec_time)
 
-    exec_time = timeit.timeit('Solution().generate_file(output_path="output/efishery.msgpack", step=100000)', setup, number=1)
+    exec_time = timeit.timeit('Solution().generate_file("output/efishery.msgpack", 100000)', setup, number=1)
     print("Execution time when write as msgpack format: ", exec_time)
 
-    exec_time = timeit.timeit('Solution().generate_file(output_path="output/efishery.pkl", step=100000)', setup, number=1)
+    exec_time = timeit.timeit('Solution().generate_file("output/efishery.pkl", 100000)', setup, number=1)
     print("Execution time when write as pickle format: ", exec_time)
+
+    exec_time = timeit.timeit('Solution().generate_file("output/efisherytinydb.json", 100000, db_type="tinydb")', setup, number=1)
+    print("Execution time when write as tinydb format: ", exec_time)
