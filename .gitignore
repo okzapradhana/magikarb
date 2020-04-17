@@ -4,6 +4,9 @@
 #generated file dir
 output/*
 
+#code to benchmark each file
+benchmark_file.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
